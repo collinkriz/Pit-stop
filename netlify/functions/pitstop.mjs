@@ -73,6 +73,9 @@ export default async (req) => {
   try { body = await req.json(); } catch { return json({ error: "Bad request" }, 400); }
   const { origin, destination } = body;
   const query = (body.query || "").trim() || "restaurants";
+  const queries = (Array.isArray(body.queries) ? body.queries : [query])
+    .map((q) => String(q).trim()).filter(Boolean).slice(0, 4);
+  if (!queries.length) queries.push("restaurants");
   if (!origin || !destination) return json({ error: "Need a start and a destination." }, 400);
 
   // 1) The base route
@@ -103,80 +106,90 @@ export default async (req) => {
   const encoded = route.polyline.encodedPolyline;
   const routePts = decodePolyline(encoded);
 
-  // 2) Places along the route, with per-place routing summaries
+  // 2) Places along the route, with per-place routing summaries.
+  //    Several search terms can run at once (a blank search covers sit-down,
+  //    fast food and drive-thrus) and the results are merged.
   const results = [];
   const seen = new Set();
-  let pageToken;
+  const pages = queries.length > 1 ? 2 : MAX_PAGES;
 
-  for (let page = 0; page < MAX_PAGES; page++) {
-    const placesRes = await fetch(PLACES_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Goog-Api-Key": key,
-        "X-Goog-FieldMask": [
-          "places.id",
-          "places.displayName",
-          "places.formattedAddress",
-          "places.location",
-          "places.rating",
-          "places.userRatingCount",
-          "places.currentOpeningHours.openNow",
-          "places.googleMapsUri",
-          "places.primaryTypeDisplayName",
-          "places.primaryType",
-          "places.types",
-          "routingSummaries",
-          "nextPageToken",
-        ].join(","),
-      },
-      body: JSON.stringify({
-        textQuery: query,
-        pageSize: 20,
-        ...(pageToken ? { pageToken } : {}),
-        searchAlongRouteParameters: { polyline: { encodedPolyline: encoded } },
-        routingParameters: {
-          origin: { latitude: start.latitude, longitude: start.longitude },
-          travelMode: "DRIVE",
-          routingPreference: "TRAFFIC_AWARE",
+  async function runQuery(textQuery) {
+    let pageToken;
+    for (let page = 0; page < pages; page++) {
+      const placesRes = await fetch(PLACES_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Goog-Api-Key": key,
+          "X-Goog-FieldMask": [
+            "places.id",
+            "places.displayName",
+            "places.formattedAddress",
+            "places.location",
+            "places.rating",
+            "places.userRatingCount",
+            "places.currentOpeningHours.openNow",
+            "places.googleMapsUri",
+            "places.primaryTypeDisplayName",
+            "places.primaryType",
+            "places.types",
+            "routingSummaries",
+            "nextPageToken",
+          ].join(","),
         },
-      }),
-    });
-    const data = await placesRes.json();
-    if (!placesRes.ok) {
-      if (page === 0) return json({ error: data.error?.message || "Place search failed." }, 502);
-      break;
-    }
-
-    (data.places || []).forEach((p, idx) => {
-      if (seen.has(p.id)) return;
-      seen.add(p.id);
-      const legs = data.routingSummaries?.[idx]?.legs || [];
-      if (legs.length < 2) return;
-      const toSecs = secs(legs[0].duration);
-      const fromSecs = secs(legs[1].duration);
-      const lat = p.location.latitude, lng = p.location.longitude;
-      results.push({
-        id: p.id,
-        name: p.displayName?.text || "Unknown",
-        address: p.formattedAddress || "",
-        type: p.primaryTypeDisplayName?.text || "",
-        primaryType: p.primaryType || "",
-        types: p.types || [],
-        lat, lng,
-        rating: p.rating ?? null,
-        ratingCount: p.userRatingCount ?? 0,
-        openNow: p.currentOpeningHours?.openNow ?? null,
-        mapsUri: p.googleMapsUri || "",
-        reachSecs: toSecs,                                   // when you'd hit it
-        reachMiles: (legs[0].distanceMeters || 0) / 1609.34,
-        detourSecs: Math.max(0, toSecs + fromSecs - baseSecs), // time added to trip
-        offRouteMiles: milesOffRoute([lat, lng], routePts),
+        body: JSON.stringify({
+          textQuery,
+          pageSize: 20,
+          ...(pageToken ? { pageToken } : {}),
+          searchAlongRouteParameters: { polyline: { encodedPolyline: encoded } },
+          routingParameters: {
+            origin: { latitude: start.latitude, longitude: start.longitude },
+            travelMode: "DRIVE",
+            routingPreference: "TRAFFIC_AWARE",
+          },
+        }),
       });
-    });
+      const data = await placesRes.json();
+      if (!placesRes.ok) {
+        if (page === 0) throw new Error(data.error?.message || "Place search failed.");
+        return;
+      }
 
-    pageToken = data.nextPageToken;
-    if (!pageToken) break;
+      (data.places || []).forEach((p, idx) => {
+        if (seen.has(p.id)) return;
+        const legs = data.routingSummaries?.[idx]?.legs || [];
+        if (legs.length < 2) return;
+        seen.add(p.id);
+        const toSecs = secs(legs[0].duration);
+        const fromSecs = secs(legs[1].duration);
+        const lat = p.location.latitude, lng = p.location.longitude;
+        results.push({
+          id: p.id,
+          name: p.displayName?.text || "Unknown",
+          address: p.formattedAddress || "",
+          type: p.primaryTypeDisplayName?.text || "",
+          primaryType: p.primaryType || "",
+          types: p.types || [],
+          lat, lng,
+          rating: p.rating ?? null,
+          ratingCount: p.userRatingCount ?? 0,
+          openNow: p.currentOpeningHours?.openNow ?? null,
+          mapsUri: p.googleMapsUri || "",
+          reachSecs: toSecs,                                     // when you'd hit it
+          reachMiles: (legs[0].distanceMeters || 0) / 1609.34,
+          detourSecs: Math.max(0, toSecs + fromSecs - baseSecs), // time added to trip
+          offRouteMiles: milesOffRoute([lat, lng], routePts),
+        });
+      });
+
+      pageToken = data.nextPageToken;
+      if (!pageToken) return;
+    }
+  }
+
+  const outcomes = await Promise.allSettled(queries.map(runQuery));
+  if (!results.length && outcomes.every((o) => o.status === "rejected")) {
+    return json({ error: outcomes[0].reason?.message || "Place search failed." }, 502);
   }
 
   results.sort((a, b) => a.detourSecs - b.detourSecs);
