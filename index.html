@@ -130,8 +130,7 @@
   /* ---------- Rows ---------- */
   .list { list-style: none; margin: 0; padding: 0 0 24px; }
   .row { padding: 12px 16px; cursor: pointer; border-bottom: 1px solid var(--line); }
-  .row.sel { background: var(--blue-soft); }
-  .row.sel .breakdown { background: var(--sheet); }
+  .row:active { background: var(--field); }
   .row-main { display: grid; grid-template-columns: 56px 1fr 44px; gap: 12px; align-items: center; }
   .figs { display: grid; gap: 4px; justify-items: stretch; }
   .detour { border-radius: 10px; text-align: center; padding: 6px 0 5px; line-height: 1; }
@@ -148,13 +147,35 @@
   .meta .closed { color: var(--bad); font-weight: 600; }
   .style-tag { font-weight: 600; color: var(--text); }
   .navbtn { width: 44px; height: 44px; border-radius: 50%; background: var(--blue); color: #fff; display: grid; place-items: center; text-decoration: none; }
-  .row-more { display: none; margin: 12px 0 2px 68px; }
-  .row.sel .row-more { display: block; }
-  .breakdown { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; background: var(--sheet); border-radius: 12px; padding: 10px 12px; }
-  .breakdown div { font-size: 12px; color: var(--muted); }
-  .breakdown b { display: block; font-size: 16px; color: var(--text); font-weight: 700; margin-top: 1px; }
-  .addr { font-size: 13px; color: var(--muted); line-height: 1.35; margin-top: 10px; }
-  .more-actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+  /* ---------- Place card ---------- */
+  .sheet.detail .search, .sheet.detail .seg { display: none; }
+  .detail-view { padding: 0 16px 18px; }
+  .d-head { display: flex; align-items: flex-start; gap: 10px; }
+  .d-head h2 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -.3px; line-height: 1.2; }
+  .d-title { flex: 1; min-width: 0; }
+  .d-sub { color: var(--muted); font-size: 14px; margin-top: 4px; line-height: 1.35; }
+  .d-sub .style-tag { color: var(--text); }
+  .d-sub .open { color: var(--good); font-weight: 600; }
+  .d-sub .closed { color: var(--bad); font-weight: 600; }
+  .xbtn { width: 32px; height: 32px; border-radius: 50%; border: 0; background: var(--field); color: var(--muted); display: grid; place-items: center; cursor: pointer; flex: none; margin-top: 2px; }
+  .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px; }
+  .stat { background: var(--field); border-radius: 14px; padding: 10px 12px 11px; min-width: 0; }
+  .stat span { display: block; font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; }
+  .stat b { display: block; font-size: 24px; font-weight: 700; letter-spacing: -.4px; margin-top: 2px; line-height: 1.15; }
+  .stat small { display: block; font-size: 12.5px; color: var(--muted); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .stat.t-good, .stat.t-ok, .stat.t-bad { background: var(--good-bg); }
+  .stat.t-ok { background: var(--ok-bg); } .stat.t-bad { background: var(--bad-bg); }
+  .stat.t-good span, .stat.t-good small { color: var(--good); }
+  .stat.t-ok span, .stat.t-ok small { color: var(--ok); }
+  .stat.t-bad span, .stat.t-bad small { color: var(--bad); }
+  .bigbtn { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 12px; height: 48px; border-radius: 12px; background: var(--blue); color: #fff; font-size: 16px; font-weight: 600; text-decoration: none; }
+  .d-links { display: grid; gap: 8px; margin-top: 8px; }
+  .d-links a { display: flex; align-items: center; justify-content: center; gap: 6px; height: 42px; border-radius: 12px; background: var(--field); color: var(--blue); font-size: 15px; font-weight: 600; text-decoration: none; }
+  .d-addr { font-size: 13.5px; color: var(--muted); line-height: 1.4; margin-top: 12px; }
+  .d-nav { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); }
+  .d-nav button { border: 0; background: none; color: var(--blue); font-size: 15px; font-weight: 600; padding: 6px 2px; cursor: pointer; }
+  .d-nav button:disabled { color: var(--faint); }
+  .d-nav span { font-size: 13px; color: var(--muted); }
   .pill { display: inline-flex; align-items: center; text-decoration: none; cursor: pointer; border: 1px solid var(--line-2); background: var(--sheet); color: var(--blue); font-size: 14px; font-weight: 600; padding: 8px 12px; border-radius: 999px; }
   .pill.solid { background: var(--blue); color: #fff; border-color: var(--blue); }
 
@@ -329,7 +350,7 @@
     meLayer = L.layerGroup().addTo(map);
   }
   const divIcon = (html) => L.divIcon({ className: "pin-wrap", html, iconSize: [0, 0], iconAnchor: [0, 0] });
-  const visibleInsets = () => ({ top: topcard.getBoundingClientRect().bottom, bottom: sheet.offsetHeight });
+  const visibleInsets = () => ({ top: topcard.getBoundingClientRect().bottom, bottom: parseFloat(sheet.style.height) || sheet.offsetHeight });
 
   function routePoints() {
     const r = state.data?.route; if (!r) return [];
@@ -383,13 +404,15 @@
     const peek = Math.round(sheetTop.offsetHeight + pad);
     const full = Math.round(vh - topcard.getBoundingClientRect().bottom - 10);
     const half = Math.min(full, Math.max(peek + 150, Math.round(vh * 0.5)));
-    return { peek, half, full };
+    const card = bodyEl.querySelector(".detail-view");
+    const fit = Math.min(full, Math.round(sheetTop.offsetHeight + (card ? card.offsetHeight : 0) + pad)); // place card: exactly its content
+    return { peek, half, full, fit };
   }
   function applyHeight(h) { sheet.style.height = h + "px"; document.documentElement.style.setProperty("--sheet-vis", h + "px"); }
   function setSheet(name) { state.sheet = name; applyHeight(snaps()[name]); $("fit").classList.toggle("away", name === "full"); }
 
   let drag = null;
-  const nearest = (s, h) => Object.entries(s).sort((a, b) => Math.abs(a[1] - h) - Math.abs(b[1] - h))[0][0];
+  const nearest = (s, h) => Object.entries(s).filter(([k]) => k !== "fit").sort((a, b) => Math.abs(a[1] - h) - Math.abs(b[1] - h))[0][0];
   sheetTop.addEventListener("pointerdown", (e) => {
     if (e.target.closest("input, button:not(#grab), a")) return;
     drag = { y: e.clientY, h: sheet.offsetHeight, t: performance.now(), moved: false };
@@ -480,7 +503,7 @@
     document.activeElement?.blur();
     store.set("last", { from: state.here ? "" : fromEl.value.trim(), to: destination, query: queryEl.value.trim() });
 
-    state.sel = null; state.showFar = false;
+    state.sel = null; state.showFar = false; sheet.classList.remove("detail");
     bodyEl.innerHTML = `<div class="loadbar"></div>` + '<div class="skel"><div class="a"></div><div><div class="b"></div><div class="c"></div></div></div>'.repeat(4);
     if (state.sheet === "peek") setSheet("half");
     $("find").disabled = true; $("findLabel").textContent = "Searching…";
@@ -546,12 +569,13 @@
     $("showFar")?.addEventListener("click", () => { state.showFar = true; rerender(); });
     $("list")?.addEventListener("click", (e) => {
       if (e.target.closest("a")) return;
-      const r = e.target.closest(".row"); if (r) select(r.dataset.id === state.sel ? null : r.dataset.id);
+      const r = e.target.closest(".row"); if (r) select(r.dataset.id);
     });
     bodyEl.querySelector("[data-all]")?.addEventListener("click", () => { state.style = "all"; renderSeg(); rerender(); });
+    state.list = list;
     drawPins(list);
   }
-  const rerender = () => { const keep = bodyEl.scrollTop; renderResults(); bodyEl.scrollTop = keep; };
+  const rerender = () => { closeCard(false); const keep = bodyEl.scrollTop; renderResults(); bodyEl.scrollTop = keep; };
 
   function emptyNote(styleCount, total) {
     if (!total) return `<div class="state"><strong>Nothing found along this route</strong>Try a different search.</div>`;
@@ -566,7 +590,7 @@
     const line1 = [`<span class="style-tag">${STYLES[st].short}</span>`, k ? esc(k) : "", p.rating ? `★ ${p.rating.toFixed(1)}` : "", p.openNow === false ? `<span class="closed">Closed</span>` : ""].filter(Boolean).join(" · ");
     const line2 = `${fmtDur(p.reachSecs)} ahead · <span class="${p.offRouteMiles > 3 ? "warn" : ""}">${off}</span>`;
     return `
-      <li class="row${p.id === state.sel ? " sel" : ""}" data-id="${esc(p.id)}">
+      <li class="row" data-id="${esc(p.id)}">
         <div class="row-main">
           <div class="figs">
             <div class="detour t-${t}"><b>+${m}</b><span>drive</span></div>
@@ -583,32 +607,93 @@
             <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M21.7 11.3 12.7 2.3a1 1 0 0 0-1.4 0l-9 9a1 1 0 0 0 0 1.4l9 9a1 1 0 0 0 1.4 0l9-9a1 1 0 0 0 0-1.4zM14 14.5V12h-4v3H8v-4a1 1 0 0 1 1-1h5V7.5l3.5 3.5-3.5 3.5z"/></svg>
           </a>
         </div>
-        <div class="row-more">
-          <div class="breakdown">
-            <div>Detour<b>+${m} min</b></div>
-            <div>At stop<b>~${sm} min</b></div>
-            <div>Total<b>+${m + sm} min</b></div>
-          </div>
-          <div class="addr">${esc(p.address)}${p.ratingCount ? ` · ${p.ratingCount.toLocaleString()} reviews` : ""}</div>
-          <div class="more-actions">
-            <a class="pill solid" href="${esc(navLink(p))}" target="_blank" rel="noopener">Add stop</a>
-            <a class="pill" href="${esc(reviewsLink(p))}" target="_blank" rel="noopener">Reviews</a>
-          </div>
-        </div>
       </li>`;
   }
 
-  function select(id, { fromMap = false } = {}) {
-    state.sel = id;
-    document.querySelectorAll(".row").forEach((r) => r.classList.toggle("sel", r.dataset.id === id));
+  function highlightPin(id) {
     Object.entries(pins).forEach(([pid, mk]) => mk.getElement()?.querySelector(".pin")?.classList.toggle("sel", pid === id));
-    if (!id) return;
-    const p = state.data.places.find((x) => x.id === id);
-    const wasFull = state.sheet === "full";
-    if (fromMap || state.sheet === "peek") setSheet("half");
-    if (wasFull) setSheet("half");
-    setTimeout(() => document.querySelector(`.row[data-id="${CSS.escape(id)}"]`)?.scrollIntoView({ behavior: "smooth", block: "nearest" }), 320);
-    if (p && hasL) setTimeout(() => panToVisible([p.lat, p.lng], Math.max(map.getZoom(), 13)), wasFull ? 300 : 0);
+  }
+
+  function select(id) {
+    const list = state.list || [];
+    const p = list.find((x) => x.id === id) || state.data.places.find((x) => x.id === id);
+    if (!p) return;
+    if (!state.sel) state.listScroll = bodyEl.scrollTop;
+    state.sel = id;
+    highlightPin(id);
+    renderCard(p);
+  }
+
+  function renderCard(p) {
+    const list = state.list || [];
+    const i = list.findIndex((x) => x.id === p.id);
+    const m = detourMin(p), t = tier(m), st = styleOf(p), sm = stopMins(p);
+    const k = kind(p);
+    const sub = [
+      `<span class="style-tag">${STYLES[st].label}</span>`,
+      k ? esc(k) : "",
+      p.rating ? `★ ${p.rating.toFixed(1)}${p.ratingCount ? ` (${p.ratingCount.toLocaleString()})` : ""}` : "",
+      p.openNow === true ? `<span class="open">Open</span>` : p.openNow === false ? `<span class="closed">Closed now</span>` : "",
+    ].filter(Boolean).join(" · ");
+    const off = p.offRouteMiles < 0.15 ? "Right on your route" : `${p.offRouteMiles.toFixed(1)} mi off your route`;
+    const fromWho = state.here ? "From you" : "From start";
+
+    sheet.classList.add("detail");
+    bodyEl.innerHTML = `
+      <div class="detail-view">
+        <div class="d-head">
+          <div class="d-title">
+            <h2>${esc(p.name)}</h2>
+            <div class="d-sub">${sub}</div>
+          </div>
+          <button class="xbtn" id="closeCard" aria-label="Back to list">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+          </button>
+        </div>
+
+        <div class="stats">
+          <div class="stat t-${t}"><span>Detour</span><b>+${m} min</b><small>${off}</small></div>
+          <div class="stat"><span>${fromWho}</span><b>${fmtDur(p.reachSecs)}</b><small>${Math.round(p.reachMiles)} mi down the road</small></div>
+          <div class="stat"><span>Time there</span><b>~${sm} min</b><small>${STYLES[st].label} estimate</small></div>
+          <div class="stat"><span>Total added</span><b>+${m + sm} min</b><small>to your ${fmtDur(state.data.route.durationSecs)} trip</small></div>
+        </div>
+
+        <a class="bigbtn" href="${esc(navLink(p))}" target="_blank" rel="noopener">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M21 3 3 10.5l7.2 2.3L12.5 20z"/></svg>
+          Add stop &amp; go
+        </a>
+        <div class="d-links">
+          <a href="${esc(reviewsLink(p))}" target="_blank" rel="noopener">Reviews, photos &amp; hours</a>
+        </div>
+        <div class="d-addr">${esc(p.address)}</div>
+
+        ${list.length > 1 && i >= 0 ? `
+        <div class="d-nav">
+          <button id="prevP" ${i === 0 ? "disabled" : ""}>‹ Previous</button>
+          <span>${i + 1} of ${list.length}</span>
+          <button id="nextP" ${i === list.length - 1 ? "disabled" : ""}>Next ›</button>
+        </div>` : ""}
+      </div>`;
+    bodyEl.scrollTop = 0;
+    $("closeCard").onclick = () => closeCard();
+    $("prevP")?.addEventListener("click", () => select(list[i - 1].id));
+    $("nextP")?.addEventListener("click", () => select(list[i + 1].id));
+    requestAnimationFrame(() => {
+      state.sheet = "half"; applyHeight(snaps().fit); $("fit").classList.remove("away");
+      if (hasL) panToVisible([p.lat, p.lng], Math.max(map.getZoom(), 13));
+    });
+  }
+
+  function closeCard(redraw = true) {
+    if (!state.sel) return;
+    state.sel = null;
+    sheet.classList.remove("detail");
+    highlightPin(null);
+    if (redraw) {
+      renderResults();
+      setSheet("half");
+      bodyEl.scrollTop = state.listScroll || 0;
+    }
   }
 
   function showError(msg, offerDemo = false) {
@@ -666,7 +751,7 @@
         P("d8", "Texas Roadhouse", "Steak house", "steak_house", "Lansing Rd, Lansing, MI", 42.7000, -84.6300, 81, 90, 17, 4.1, 4.4, 5100, false),
       ],
     };
-    state.demo = true; state.sel = null;
+    state.demo = true; state.sel = null; sheet.classList.remove("detail");
     showResults();
   }
 
