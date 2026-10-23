@@ -94,14 +94,10 @@
   .search .ibtn { width: 34px; height: 34px; }
   .search .ibtn[hidden] { display: none; }
   .search .goq { background: var(--blue); color: #fff; }
-  .chips { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin: 10px -16px 0; padding: 0 16px; touch-action: pan-x; }
-  .chips::-webkit-scrollbar { display: none; }
-  .chip {
-    flex: none; display: inline-flex; align-items: center; gap: 6px; border: 0; background: var(--field); color: var(--text);
-    font-size: 14px; font-weight: 500; padding: 8px 12px; border-radius: 999px; cursor: pointer;
-  }
-  .chip .e { font-size: 15px; line-height: 1; }
-  .chip.on { background: var(--blue); color: #fff; }
+  .seg { display: grid; grid-template-columns: repeat(4, 1fr); background: var(--field); border-radius: 10px; padding: 2px; margin-top: 10px; }
+  .seg button { border: 0; background: none; color: var(--text); font-size: 13.5px; font-weight: 500; padding: 7px 2px; border-radius: 8px; cursor: pointer; white-space: nowrap; }
+  .seg button.on { background: var(--sheet); font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,.14); }
+  @media (prefers-color-scheme: dark) { .seg button.on { background: #48484a; } }
 
   .sheet-body { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
 
@@ -113,24 +109,16 @@
 
   /* ---------- Results header ---------- */
   .results-head { position: sticky; top: 0; z-index: 2; background: var(--sheet); }
-  .summary { padding: 8px 16px 0; display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+  .summary { padding: 10px 16px 0; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+  .sum-text { min-width: 0; }
   .sum-main { font-size: 17px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .sum-side { color: var(--muted); font-size: 14px; white-space: nowrap; }
+  .sum-side { color: var(--muted); font-size: 13.5px; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .demo-tag { font-size: 11px; font-weight: 700; letter-spacing: .4px; color: var(--ok); background: var(--ok-bg); padding: 2px 6px; border-radius: 5px; margin-right: 6px; vertical-align: 2px; }
-  .filters { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding: 10px 16px 12px; align-items: center; border-bottom: 1px solid var(--line); }
-  .filters::-webkit-scrollbar { display: none; }
-  .sel-pill { position: relative; flex: none; }
-  .sel-pill select {
-    appearance: none; -webkit-appearance: none; border: 1px solid var(--line-2); background: var(--sheet); color: var(--text);
-    font-size: 14px; font-weight: 500; padding: 7px 28px 7px 12px; border-radius: 999px; cursor: pointer;
-  }
-  .sel-pill::after { content: ""; position: absolute; right: 12px; top: 50%; width: 6px; height: 6px; border-right: 1.6px solid var(--muted); border-bottom: 1.6px solid var(--muted); transform: translateY(-70%) rotate(45deg); pointer-events: none; }
-  .tog {
-    flex: none; border: 1px solid var(--line-2); background: var(--sheet); color: var(--text);
-    font-size: 14px; font-weight: 500; padding: 7px 12px; border-radius: 999px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;
-  }
-  .tog.on { background: var(--blue-soft); border-color: transparent; color: var(--blue); }
-  .vsep { width: 1px; height: 20px; background: var(--line-2); flex: none; margin: 0 2px; }
+  .results-head { border-bottom: 1px solid var(--line); padding-bottom: 10px; }
+  .sort { position: relative; flex: none; color: var(--blue); font-size: 14px; font-weight: 600; }
+  .sort select { position: absolute; inset: 0; opacity: 0; font-size: 16px; }
+  .sort span::after { content: ""; display: inline-block; width: 6px; height: 6px; margin-left: 6px; border-right: 1.8px solid currentColor; border-bottom: 1.8px solid currentColor; transform: translateY(-3px) rotate(45deg); }
+  .more-far { display: block; margin: 14px auto 0; }
 
   /* ---------- Rows ---------- */
   .list { list-style: none; margin: 0; padding: 0 0 24px; }
@@ -225,15 +213,15 @@
     <div class="grab" id="grab"><i></i></div>
     <div class="search">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-      <input id="query" placeholder="Search a place, like Taco Bell" enterkeyhint="search" autocomplete="off">
+      <input id="query" placeholder="Any restaurant, or e.g. Taco Bell" enterkeyhint="search" autocomplete="off">
       <button type="button" class="ibtn" id="clearQ" aria-label="Clear" hidden>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm4.3 12.9-1.4 1.4L12 13.4l-2.9 2.9-1.4-1.4 2.9-2.9-2.9-2.9 1.4-1.4 2.9 2.9 2.9-2.9 1.4 1.4-2.9 2.9z"/></svg>
       </button>
-      <button type="button" class="ibtn goq" id="goQ" aria-label="Search" hidden>
+      <button type="button" class="ibtn goq" id="goQ" aria-label="Search">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
       </button>
     </div>
-    <div class="chips" id="chips"></div>
+    <div class="seg" id="seg" role="tablist"></div>
   </div>
   <div class="sheet-body" id="body"></div>
 </section>
@@ -244,20 +232,6 @@
   const $ = (id) => document.getElementById(id);
   const fromEl = $("from"), toEl = $("to"), queryEl = $("query"), bodyEl = $("body");
   const sheet = $("sheet"), sheetTop = $("sheetTop"), topcard = $("topcard");
-
-  // ---------- Food types (each one is a search along the route) ----------
-  const CATS = [
-    { id: "all", label: "All food", e: "🍽️", q: "restaurants" },
-    { id: "burgers", label: "Burgers", e: "🍔", q: "burgers" },
-    { id: "mexican", label: "Mexican", e: "🌮", q: "mexican food" },
-    { id: "chicken", label: "Chicken", e: "🍗", q: "fried chicken" },
-    { id: "pizza", label: "Pizza", e: "🍕", q: "pizza" },
-    { id: "sandwiches", label: "Sandwiches", e: "🥪", q: "sandwiches" },
-    { id: "breakfast", label: "Breakfast", e: "🥞", q: "breakfast" },
-    { id: "coffee", label: "Coffee", e: "☕", q: "coffee" },
-    { id: "asian", label: "Asian", e: "🥡", q: "asian food" },
-    { id: "bbq", label: "BBQ", e: "🍖", q: "bbq" },
-  ];
 
   // ---------- Service style + typical time at the stop ----------
   const STYLES = {
@@ -287,12 +261,12 @@
     return t && !/^restaurant$/i.test(t) ? t : "";
   };
 
-  const SORTS = [["detour", "Least detour"], ["total", "Least total time"], ["soonest", "Next up"]];
-  const MAXES = [["5", "≤ 5 min detour"], ["10", "≤ 10 min detour"], ["15", "≤ 15 min detour"], ["20", "≤ 20 min detour"], ["Infinity", "Any detour"]];
+  const SORTS = [["detour", "Least detour"], ["total", "Least total time"], ["soonest", "Coming up first"]];
+  const FAR_MIN = 20; // detours longer than this are tucked away
 
   const state = {
     here: null, data: null, demo: false, sel: null, sheet: "half",
-    cat: "all", sort: "detour", maxDetour: 15, styles: new Set(["drive", "quick", "sit"]),
+    style: "all", sort: "detour", showFar: false,
   };
   const store = {
     get(k) { try { return JSON.parse(localStorage.getItem("pitstop." + k)); } catch { return null; } },
@@ -407,7 +381,7 @@
   let drag = null;
   const nearest = (s, h) => Object.entries(s).sort((a, b) => Math.abs(a[1] - h) - Math.abs(b[1] - h))[0][0];
   sheetTop.addEventListener("pointerdown", (e) => {
-    if (e.target.closest("input, button:not(#grab), a, .chip")) return;
+    if (e.target.closest("input, button:not(#grab), a")) return;
     drag = { y: e.clientY, h: sheet.offsetHeight, t: performance.now(), moved: false };
     sheet.classList.add("dragging");
     sheetTop.setPointerCapture(e.pointerId);
@@ -438,22 +412,19 @@
   window.addEventListener("resize", () => setSheet(state.sheet));
 
   // ================= INPUTS =================
-  function renderChips() {
-    const typed = queryEl.value.trim();
-    $("chips").innerHTML = CATS.map((c) =>
-      `<button type="button" class="chip${!typed && state.cat === c.id ? " on" : ""}" data-cat="${c.id}"><span class="e">${c.e}</span>${esc(c.label)}</button>`).join("");
-    $("clearQ").hidden = !typed;
-    $("goQ").hidden = !typed;
+  const SEG = [["all", "All"], ["drive", "Drive-thru"], ["quick", "Counter"], ["sit", "Sit-down"]];
+  function renderSeg() {
+    $("seg").innerHTML = SEG.map(([k, l]) => `<button type="button" data-k="${k}" class="${state.style === k ? "on" : ""}">${l}</button>`).join("");
   }
-  $("chips").addEventListener("click", (e) => {
-    const c = e.target.closest("[data-cat]"); if (!c) return;
-    state.cat = c.dataset.cat; queryEl.value = "";
-    renderChips();
-    c.scrollIntoView({ behavior: "smooth", inline: "nearest", block: "nearest" });
-    search();
+  $("seg").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-k]"); if (!b) return;
+    state.style = b.dataset.k; store.set("style", state.style);
+    renderSeg();
+    if (state.data) rerender();
   });
-  queryEl.addEventListener("input", renderChips);
-  $("clearQ").addEventListener("click", () => { queryEl.value = ""; renderChips(); queryEl.focus(); });
+  const syncQ = () => { $("clearQ").hidden = !queryEl.value.trim(); };
+  queryEl.addEventListener("input", syncQ);
+  $("clearQ").addEventListener("click", () => { queryEl.value = ""; syncQ(); queryEl.focus(); });
   $("goQ").addEventListener("click", search);
 
   function setHere(on, coords) {
@@ -488,8 +459,7 @@
   });
 
   // ================= SEARCH =================
-  const searchTerm = () => queryEl.value.trim() || CATS.find((c) => c.id === state.cat)?.q || "restaurants";
-  const searchLabel = () => queryEl.value.trim() || (state.cat === "all" ? "Food" : CATS.find((c) => c.id === state.cat).label);
+  const searchTerm = () => queryEl.value.trim() || "restaurants";
 
   async function search() {
     const origin = state.here || fromEl.value.trim();
@@ -497,9 +467,9 @@
     if (!origin) return fromEl.focus();
     if (!destination) return toEl.focus();
     document.activeElement?.blur();
-    store.set("last", { from: state.here ? "" : fromEl.value.trim(), to: destination, query: queryEl.value.trim(), cat: state.cat });
+    store.set("last", { from: state.here ? "" : fromEl.value.trim(), to: destination, query: queryEl.value.trim() });
 
-    state.sel = null;
+    state.sel = null; state.showFar = false;
     bodyEl.innerHTML = `<div class="loadbar"></div>` + '<div class="skel"><div class="a"></div><div><div class="b"></div><div class="c"></div></div></div>'.repeat(4);
     if (state.sheet === "peek") setSheet("half");
 
@@ -524,60 +494,55 @@
   }
 
   const totalSecs = (p) => p.detourSecs + stopMins(p) * 60;
-  function filtered() {
-    return (state.data.places || [])
-      .filter((p) => detourMin(p) <= state.maxDetour && state.styles.has(styleOf(p)))
-      .sort((a, b) =>
-        state.sort === "detour" ? a.detourSecs - b.detourSecs || a.reachSecs - b.reachSecs :
-        state.sort === "total" ? totalSecs(a) - totalSecs(b) || a.reachSecs - b.reachSecs :
-        a.reachSecs - b.reachSecs);
+  function sorted(list) {
+    return list.sort((a, b) =>
+      state.sort === "detour" ? a.detourSecs - b.detourSecs || a.reachSecs - b.reachSecs :
+      state.sort === "total" ? totalSecs(a) - totalSecs(b) || a.reachSecs - b.reachSecs :
+      a.reachSecs - b.reachSecs);
   }
 
   function renderResults() {
-    const d = state.data, all = d.places || [], list = filtered();
+    const d = state.data;
+    const ofStyle = (d.places || []).filter((p) => state.style === "all" || styleOf(p) === state.style);
+    const near = ofStyle.filter((p) => detourMin(p) <= FAR_MIN);
+    const far = ofStyle.length - near.length;
+    const list = sorted(state.showFar ? ofStyle.slice() : near);
     const toLabel = state.demo ? "Grand Rapids" : shorten(toEl.value);
-    const maxKey = state.maxDetour === Infinity ? "Infinity" : String(state.maxDetour);
+    const what = queryEl.value.trim();
+    const styleWord = state.style === "all" ? "" : SEG.find(([k]) => k === state.style)[1].toLowerCase() + " ";
+    const sortLabel = SORTS.find(([v]) => v === state.sort)[1];
 
     bodyEl.innerHTML = `
       <div class="results-head">
-      <div class="summary">
-        <div class="sum-main">${state.demo ? `<span class="demo-tag">DEMO</span>` : ""}${list.length} ${esc(searchLabel())} stop${list.length === 1 ? "" : "s"}</div>
-        <div class="sum-side">${fmtDur(d.route.durationSecs)} to ${esc(toLabel)}</div>
+        <div class="summary">
+          <div class="sum-text">
+            <div class="sum-main">${state.demo ? `<span class="demo-tag">DEMO</span>` : ""}${list.length} ${esc(styleWord)}${what ? esc(what) + " " : ""}stop${list.length === 1 ? "" : "s"}</div>
+            <div class="sum-side">${fmtDur(d.route.durationSecs)} drive to ${esc(toLabel)}</div>
+          </div>
+          <label class="sort"><span>${sortLabel}</span>
+            <select id="sortSel" aria-label="Sort">${SORTS.map(([v, l]) => `<option value="${v}"${v === state.sort ? " selected" : ""}>${l}</option>`).join("")}</select>
+          </label>
+        </div>
       </div>
-      <div class="filters" id="filters">
-        ${Object.entries(STYLES).map(([k, s]) => `<button class="tog${state.styles.has(k) && state.styles.size < 3 ? " on" : ""}" data-style="${k}">${s.label}</button>`).join("")}
-        <span class="vsep"></span>
-        <label class="sel-pill"><select id="sortSel" aria-label="Sort">${SORTS.map(([v, l]) => `<option value="${v}"${v === state.sort ? " selected" : ""}>${l}</option>`).join("")}</select></label>
-        <label class="sel-pill"><select id="maxSel" aria-label="Max detour">${MAXES.map(([v, l]) => `<option value="${v}"${v === maxKey ? " selected" : ""}>${l}</option>`).join("")}</select></label>
-      </div>
-      </div>
-      ${list.length ? `<ul class="list" id="list">${list.map(row).join("")}</ul>
-        <div class="foot">Stop times are estimates: drive-thru ~${STYLES.drive.mins} min, counter ~${STYLES.quick.mins}, sit-down ~${STYLES.sit.mins}.</div>` : emptyNote(all.length)}`;
+      ${list.length ? `<ul class="list" id="list">${list.map(row).join("")}</ul>` : emptyNote(ofStyle.length, d.places?.length || 0)}
+      ${far && !state.showFar ? `<button class="pill more-far" id="showFar">Show ${far} more (over ${FAR_MIN} min detour)</button>` : ""}
+      ${list.length ? `<div class="foot">Time at stop is an estimate: drive-thru ~${STYLES.drive.mins} min, counter ~${STYLES.quick.mins}, sit-down ~${STYLES.sit.mins}.</div>` : ""}`;
 
     $("sortSel").onchange = (e) => { state.sort = e.target.value; store.set("sort", state.sort); rerender(); };
-    $("maxSel").onchange = (e) => { state.maxDetour = e.target.value === "Infinity" ? Infinity : Number(e.target.value); store.set("maxDetour", e.target.value); rerender(); };
-    $("filters").querySelectorAll("[data-style]").forEach((b) => b.onclick = () => {
-      const k = b.dataset.style;
-      if (state.styles.has(k) && state.styles.size === 1) state.styles = new Set(Object.keys(STYLES)); // last one off → show all
-      else if (state.styles.size === 3) state.styles = new Set([k]);                                   // first tap → just this one
-      else state.styles.has(k) ? state.styles.delete(k) : state.styles.add(k);
-      store.set("styles", [...state.styles]);
-      rerender();
-    });
+    $("showFar")?.addEventListener("click", () => { state.showFar = true; rerender(); });
     $("list")?.addEventListener("click", (e) => {
       if (e.target.closest("a")) return;
       const r = e.target.closest(".row"); if (r) select(r.dataset.id === state.sel ? null : r.dataset.id);
     });
-    bodyEl.querySelector("[data-reset]")?.addEventListener("click", () => {
-      state.maxDetour = Infinity; state.styles = new Set(Object.keys(STYLES)); rerender();
-    });
+    bodyEl.querySelector("[data-all]")?.addEventListener("click", () => { state.style = "all"; renderSeg(); rerender(); });
     drawPins(list);
   }
   const rerender = () => { const keep = bodyEl.scrollTop; renderResults(); bodyEl.scrollTop = keep; };
 
-  function emptyNote(total) {
-    if (!total) return `<div class="state"><strong>Nothing found along this route</strong>Try another food type or search.</div>`;
-    return `<div class="state"><strong>${total} found, but none match your filters</strong><button class="pill" data-reset>Show all</button></div>`;
+  function emptyNote(styleCount, total) {
+    if (!total) return `<div class="state"><strong>Nothing found along this route</strong>Try a different search.</div>`;
+    if (!styleCount) return `<div class="state"><strong>No ${SEG.find(([k]) => k === state.style)[1].toLowerCase()} spots found</strong>${total} other stop${total === 1 ? "" : "s"} along the way.<br><button class="pill" data-all>Show all</button></div>`;
+    return `<div class="state"><strong>Nothing within ${FAR_MIN} min of your route</strong></div>`;
   }
 
   function row(p) {
@@ -643,7 +608,7 @@
     bodyEl.innerHTML = `
       <div class="intro">
         <h1>Food on the way</h1>
-        <p>Set your route, then pick a food type or search a place. Each stop shows the drive time it adds, plus about how long you'll spend there.</p>
+        <p>Set your route and search, or leave the search blank to see everything. Each stop shows the drive time it adds, plus about how long you'll spend there.</p>
         <button class="linkbtn" id="demoBtn">See a demo →</button>
       </div>`;
     $("demoBtn").onclick = showDemo;
@@ -693,11 +658,10 @@
 
   // ================= START =================
   const last = store.get("last");
-  if (last) { fromEl.value = last.from || ""; toEl.value = last.to || ""; queryEl.value = last.query || ""; if (last.cat) state.cat = last.cat; }
-  const savedMax = store.get("maxDetour"); if (savedMax) state.maxDetour = savedMax === "Infinity" ? Infinity : Number(savedMax);
+  if (last) { fromEl.value = last.from || ""; toEl.value = last.to || ""; queryEl.value = last.query || ""; }
   const savedSort = store.get("sort"); if (savedSort) state.sort = savedSort;
-  const savedStyles = store.get("styles"); if (Array.isArray(savedStyles) && savedStyles.length) state.styles = new Set(savedStyles);
-  renderChips(); showIntro(); setSheet("half");
+  const savedStyle = store.get("style"); if (SEG.some(([k]) => k === savedStyle)) state.style = savedStyle;
+  renderSeg(); syncQ(); showIntro(); setSheet("half");
   if (new URLSearchParams(location.search).has("demo")) showDemo();
 })();
 </script>
